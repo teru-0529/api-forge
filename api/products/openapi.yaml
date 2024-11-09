@@ -1,0 +1,372 @@
+openapi: 3.0.3
+info:
+  title: Products API
+  description: 商品領域API
+  version: 1.0.0
+servers:
+  - url: http://{host}:{port}
+    description: ローカル開発環境
+    variables:
+      host:
+        default: localhost
+      port:
+        default: '9020'
+  - url: https://production/products/api
+    description: プロダクション環境
+tags:
+  - name: product
+    description: 商品
+  - name: default
+    description: 基本機能
+paths:
+  /health:
+    get:
+      tags:
+        - default
+      operationId: products.health.get
+      summary: サーバー状態を返す
+      description: サーバーの状態を返します。
+      responses:
+        '200':
+          description: OK
+        default:
+          description: Error
+  /products:
+    get:
+      tags:
+        - product
+      operationId: products.products.get
+      summary: 商品一覧取得
+      description: 商品一覧を取得する。ソートは`商品NO`の昇順
+      parameters:
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/productKbn'
+          description: 【検索条件】商品区分（完全一致）
+        - $ref: '#/components/parameters/productName'
+          description: 【検索条件】商品名（前方一致）
+        - $ref: '#/components/parameters/department'
+          description: 【検索条件】担当部署（完全一致）
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/multiple'
+          headers:
+            is_remaining:
+              schema:
+                type: boolean
+              description: limit件数でスライスした際に返却していないデータがある場合にtrue
+              example: true
+        default:
+          $ref: '#/components/responses/error_response'
+      externalDocs:
+        description: 商品一覧取得
+        url: https://google.com/
+  /products/{product_no}:
+    put:
+      tags:
+        - product
+      operationId: products.products.no.put
+      summary: 商品登録
+      description: 商品Noを指定し、商品を1件登録する。登録日は自動で設定する。すでに登録されている商品Noを指定した場合はアプリケーションエラーとなる。
+      parameters:
+        - $ref: '#/components/parameters/productNo'
+      requestBody:
+        description: 登録する商品情報
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/single'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/single'
+        default:
+          $ref: '#/components/responses/error_response'
+      externalDocs:
+        description: 商品登録
+        url: https://google.com/
+    patch:
+      tags:
+        - product
+      operationId: products.products.no.patch
+      summary: 商品修正
+      description: 商品Noを指定し、特定した商品の指定した項目のみ変更する。
+      parameters:
+        - $ref: '#/components/parameters/productNo'
+      requestBody:
+        description: 商品の変更内容
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/patched'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/single'
+        default:
+          $ref: '#/components/responses/error_response'
+      externalDocs:
+        description: 商品修正
+        url: https://google.com/
+    delete:
+      tags:
+        - product
+      operationId: products.products.no.delete
+      summary: 商品削除
+      description: 商品Noを指定し、商品を1件削除する。
+      parameters:
+        - $ref: '#/components/parameters/productNo'
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/error_response'
+      externalDocs:
+        description: 商品削除
+        url: https://google.com/
+    get:
+      tags:
+        - product
+      operationId: products.products.no.get
+      summary: 商品取得
+      description: 商品Noを指定し、商品を1件取得する。
+      parameters:
+        - $ref: '#/components/parameters/productNo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/single'
+        default:
+          $ref: '#/components/responses/error_response'
+      externalDocs:
+        description: 商品取得
+        url: https://google.com/
+components:
+  parameters:
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 500
+      description: 検索結果数上限値(デフォルト値は20)
+      example: 100
+    offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: 検索時offset値(デフォルト値は0)
+      example: 20
+    productKbn:
+      name: product_kbn
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/productKbn'
+      description: 商品区分
+    productName:
+      name: product_name
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/productName'
+    department:
+      name: department
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/department'
+    productNo:
+      name: product_no
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/productNo'
+  schemas:
+    productKbn:
+      type: string
+      enum:
+        - NO_CHECKED
+        - NORMAL
+        - CHANGED
+        - STOPPED
+      description: 商品の状態を表す区分
+      example: NORMAL
+    productName:
+      type: string
+      maxLength: 100
+      description: 取扱商品名
+      example: 日本刀
+    department:
+      type: string
+      enum:
+        - RECEIVING
+        - ORDERING
+        - PRODUCTS
+        - OVERSEAS
+        - ACCOUNTING
+      description: 部署
+      example: ORDERING
+    comment:
+      type: string
+      minLength: 10
+      description: コメント
+      example: 制御用装置
+    Error:
+      type: object
+      description: エラーレスポンス
+      properties:
+        message:
+          $ref: '#/components/schemas/comment'
+          description: エラーメッセージ
+      example:
+        message: APIを実行する権限を有しないユーザーです
+    productNo:
+      type: string
+      minLength: 9
+      maxLength: 10
+      description: 商品特定のユニークキー
+      example: AAA000001
+    up:
+      type: number
+      minimum: 0
+      maximum: 1000
+      exclusiveMaximum: true
+      description: 仕入れ先からの購入価格
+      example: 250.25
+    price:
+      type: integer
+      minimum: 0
+      maximum: 99999
+      exclusiveMinimum: true
+      exclusiveMaximum: true
+      description: 円、希望小売価格
+      example: 14000
+    userId:
+      type: string
+      minLength: 4
+      maxLength: 4
+      description: システム利用ユーザー
+      example: '0001'
+    restDate:
+      type: string
+      format: date
+      description: 登録日
+      example: '2022-12-31'
+    profitRate:
+      type: number
+      minimum: -10
+      maximum: 10
+      exclusiveMinimum: true
+      exclusiveMaximum: true
+      description: 利益率
+      example: 0.324
+    single:
+      description: 商品リソース
+      type: object
+      properties:
+        productNo:
+          $ref: '#/components/schemas/productNo'
+          readOnly: true
+        productKbn:
+          $ref: '#/components/schemas/productKbn'
+        productName:
+          $ref: '#/components/schemas/productName'
+        up:
+          $ref: '#/components/schemas/up'
+          description: UP(UnitPrice:仕入値)
+        price:
+          $ref: '#/components/schemas/price'
+        department:
+          $ref: '#/components/schemas/department'
+          description: 担当部署
+        pic:
+          $ref: '#/components/schemas/userId'
+          description: 担当者ID
+        restDate:
+          $ref: '#/components/schemas/restDate'
+          readOnly: true
+          description: 登録日（自動登録）
+        notes:
+          $ref: '#/components/schemas/comment'
+          description: 摘要
+        costPrice:
+          description: 想定原価（※算出項目）  ■:月次原価リソースから算出する現時点の原価額
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/price'
+        profitRate:
+          description: 想定利益率（※算出項目）  ■:(定価-想定原価)/定価
+          readOnly: true
+          allOf:
+            - $ref: '#/components/schemas/profitRate'
+      required:
+        - productNo
+        - productKbn
+        - productName
+        - up
+        - department
+        - restDate
+    multiple:
+      description: 商品リソースの集合
+      type: array
+      items:
+        $ref: '#/components/schemas/single'
+      example:
+        - productNo: AAA000001
+          productKbn: NORMAL
+          productName: 日本刀
+          up: 250.25
+          price: null
+          department: ORDERING
+          pic: '0010'
+          restDate: '2022-04-28'
+          notes: 取扱注意
+        - productNo: BBB000015
+          productKbn: NORMAL
+          productName: 火縄銃
+          up: 1500.43
+          price: 20000
+          department: OVERSEAS
+          pic: '0034'
+          restDate: '2023-07-01'
+          notes: null
+    patched:
+      description: 商品リソース（変更可のみ）
+      type: object
+      properties:
+        productKbn:
+          $ref: '#/components/schemas/productKbn'
+        price:
+          $ref: '#/components/schemas/price'
+        pic:
+          $ref: '#/components/schemas/userId'
+        notes:
+          $ref: '#/components/schemas/comment'
+  responses:
+    error_response:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

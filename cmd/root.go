@@ -17,6 +17,11 @@ var (
 )
 var cfgFile string
 
+var (
+	settingFile string
+	distDir     string
+)
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "api-forge",
@@ -43,11 +48,13 @@ func init() {
 
 	// PROCESS:サブコマンドの追加
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(listCmd)
 
 	// TODO:cofigファイルの定義(viper)は未整備
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.api-forge.yaml)")
 
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().StringVarP(&settingFile, "in", "I", "./api-list.yaml", "setting file path")
+	rootCmd.PersistentFlags().StringVarP(&distDir, "out", "O", "./dist", "output directry path")
 }
 
 // initConfig reads in config file and ENV variables if set.

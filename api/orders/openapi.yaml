@@ -1,0 +1,597 @@
+openapi: 3.1.0
+info:
+  title: Orders API
+  description: 受注管理API
+  version: 1.0.0
+servers:
+  - url: http://{host}:{port}
+    description: ローカル開発環境
+    variables:
+      host:
+        default: localhost
+      port:
+        default: '7011'
+  - url: https://production/orders/api
+    description: プロダクション環境
+tags:
+  - name: order
+    description: 受注
+paths:
+  /receivings:
+    post:
+      tags:
+        - order
+      operationId: orders.receivings.post
+      summary: 受注登録
+      description: 受注リソースを登録する。
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+      requestBody:
+        description: 受注(登録項目)
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceivingPostBody'
+      responses:
+        '201':
+          description: Create
+          headers:
+            location:
+              $ref: '#/components/headers/location'
+              example: /receivings/RO-0000001
+        default:
+          $ref: '#/components/responses/error_response'
+    get:
+      tags:
+        - order
+      operationId: orders.receivings.get
+      summary: 受注一覧検索
+      description: 受注リソースを検索する。ソート順は受注番号の降順
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/customerName'
+        - $ref: '#/components/parameters/orderStatus'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceivingArray'
+          headers:
+            is_remaining:
+              $ref: '#/components/headers/remaining'
+        default:
+          $ref: '#/components/responses/error_response'
+  /receivings/{order_no}:
+    get:
+      tags:
+        - order
+      operationId: orders.receivings.no.get
+      summary: 受注取得
+      description: 受注番号を指定して、受注リソースを取得する。
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/orderNo'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceivingWithDetail'
+        '404':
+          description: Not Found
+        default:
+          $ref: '#/components/responses/error_response'
+  /receivings/{order_no}/operator:
+    put:
+      tags:
+        - order
+      operationId: orders.receivings.no.operator.put
+      summary: 受注修正
+      description: 受注番号を指定して、受注リソースを修正する。
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/orderNo'
+      requestBody:
+        description: 受注(修正項目)
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceivingOperatorBody'
+      responses:
+        '204':
+          description: No Contents
+        '404':
+          description: Not Found
+        default:
+          $ref: '#/components/responses/error_response'
+  /cancel-instructions:
+    post:
+      tags:
+        - order
+      operationId: orders.cancel-instructions.post
+      summary: キャンセル指示登録
+      description: 受注残の存在する受注明細を指定してキャンセル指示を登録する。
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+      requestBody:
+        description: キャンセル指示
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelInstructionBody'
+      responses:
+        '201':
+          description: Create
+          headers:
+            location:
+              $ref: '#/components/headers/location'
+              example: /receivings/RO-0000001
+        default:
+          $ref: '#/components/responses/error_response'
+  /shipping-instructions:
+    post:
+      tags:
+        - order
+      operationId: orders.shipping-instructions.post
+      summary: 出荷指示登録
+      description: 受注残の存在する受注明細を指定して出荷指示を登録する。
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+      requestBody:
+        description: 出荷指示
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShippingInstructionBody'
+      responses:
+        '201':
+          description: Create
+          headers:
+            location:
+              $ref: '#/components/headers/location'
+              example: /receivings/RO-0000001
+        default:
+          $ref: '#/components/responses/error_response'
+components:
+  schemas:
+    accountId:
+      type: string
+      maxLength: 30
+      description: サインインした際のアカウントID
+      example: P0673822
+    limit:
+      type: integer
+      minimum: 1
+      maximum: 2000
+      description: 検索結果の取得数上限値
+      example: 100
+    offset:
+      type: integer
+      minimum: 0
+      description: 検索実行時のオフセット値
+      example: 0
+    customerName:
+      type: string
+      maxLength: 50
+      description: 受注先企業名
+      example: 徳川商事株式会社
+    orderStatus:
+      type: string
+      enum:
+        - WORK_IN_PROGRESS
+        - CANCELED
+        - COMPLETED
+        - PREPARING
+      description: 受注状況
+      example: COMPLETED
+    urlPath:
+      type: string
+      maxLength: 100
+      description: パス
+      example: /top
+    note:
+      type: string
+      description: 備考
+      example: 注意してください
+    Error:
+      type: object
+      description: エラーレスポンス
+      properties:
+        types:
+          $ref: '#/components/schemas/urlPath'
+          description: 問題タイプを識別するURI
+        title:
+          $ref: '#/components/schemas/note'
+          description: エラータイトル
+        detail:
+          $ref: '#/components/schemas/note'
+          description: エラー詳細
+      required:
+        - types
+      example:
+        types: /foo/bar/123
+        title: 401 Unauthorized
+        detail: APIを実行する権限を有しないユーザーです
+    orderNo:
+      type: string
+      pattern: ^RO-[0-9]{7}$
+      minLength: 10
+      maxLength: 10
+      description: 受注番号
+      example: RO-0000023
+    sysDate:
+      type: string
+      format: date
+      description: 日付
+      example: '2024-03-15'
+    operatorName:
+      type: string
+      minLength: 3
+      maxLength: 30
+      description: 担当者名称
+      example: 織田信長
+    price:
+      type: integer
+      minimum: 0
+      maximum: 9999999
+      description: 金額
+      example: 15000
+    Receiving:
+      description: 受注
+      type: object
+      properties:
+        orderNo:
+          $ref: '#/components/schemas/orderNo'
+        orderDate:
+          $ref: '#/components/schemas/sysDate'
+          description: 受注日
+        operatorName:
+          $ref: '#/components/schemas/operatorName'
+          description: 受注担当者氏名
+        customerName:
+          $ref: '#/components/schemas/customerName'
+        totalOrderPrice:
+          $ref: '#/components/schemas/price'
+          description: 受注金額
+        remainingOrderPrice:
+          $ref: '#/components/schemas/price'
+          description: 受注残額
+        orderStatus:
+          $ref: '#/components/schemas/orderStatus'
+      required:
+        - orderNo
+        - orderDate
+        - operatorName
+        - customerName
+        - totalOrderPrice
+        - remainingOrderPrice
+        - orderStatus
+    ReceivingArray:
+      description: 受注の集合
+      type: array
+      items:
+        $ref: '#/components/schemas/Receiving'
+      example:
+        - orderNo: RO-0000001
+          orderDate: '2024-01-01'
+          operatorName: 織田信長
+          customerName: 徳川物産株式会社
+          totalOrderPrice: 280000
+          remainingOrderPrice: 280000
+          orderStatus: COMPLETED
+        - orderNo: RO-0000002
+          orderDate: '2024-03-14'
+          operatorName: 織田信長
+          customerName: 株式会社島津製作所
+          totalOrderPrice: 0
+          remainingOrderPrice: 0
+          orderStatus: CANCELED
+        - orderNo: RO-0000003
+          orderDate: '2024-04-26'
+          operatorName: 上杉謙信
+          customerName: 徳川物産株式会社
+          totalOrderPrice: 145000
+          remainingOrderPrice: 34000
+          orderStatus: WORK_IN_PROGRESS
+    productId:
+      type: string
+      pattern: ^P[0-9]{4}$
+      minLength: 5
+      maxLength: 5
+      description: 商品ID
+      example: P0001
+    quantity:
+      type: integer
+      minimum: 0
+      maximum: 1000
+      description: 数量
+      example: 13
+    ReceivingPostDetail:
+      description: 受注明細
+      type: object
+      properties:
+        productId:
+          $ref: '#/components/schemas/productId'
+        orderQuantity:
+          $ref: '#/components/schemas/quantity'
+          description: 受注数
+        sellingPrice:
+          $ref: '#/components/schemas/price'
+          description: 販売単価
+      required:
+        - productId
+        - orderQuantity
+        - sellingPrice
+    ReceivingPostDetailArray:
+      description: 受注明細
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/ReceivingPostDetail'
+      example:
+        - productId: P0022
+          orderQuantity: 3
+          sellingPrice: 34800
+        - productId: P0025
+          orderQuantity: 1
+          sellingPrice: 106400
+    ReceivingPostBody:
+      description: 受注登録
+      type: object
+      properties:
+        operatorName:
+          $ref: '#/components/schemas/operatorName'
+          description: 受注担当者氏名
+        customerName:
+          $ref: '#/components/schemas/customerName'
+        details:
+          $ref: '#/components/schemas/ReceivingPostDetailArray'
+      required:
+        - operatorName
+        - customerName
+        - details
+    profitRate:
+      type: number
+      minimum: 0
+      maximum: 1
+      description: 利益額/売価
+      example: 0.284
+    ReceivingDetail:
+      description: 受注明細
+      type: object
+      properties:
+        productId:
+          $ref: '#/components/schemas/productId'
+        orderQuantity:
+          $ref: '#/components/schemas/quantity'
+          description: 受注数
+        shippingQuantity:
+          $ref: '#/components/schemas/quantity'
+          description: 出荷数
+        cancelQuantity:
+          $ref: '#/components/schemas/quantity'
+          description: キャンセル数
+        remainingQuantity:
+          $ref: '#/components/schemas/quantity'
+          description: 受注残数
+        sellingPrice:
+          $ref: '#/components/schemas/price'
+          description: 販売単価
+        costPrice:
+          $ref: '#/components/schemas/price'
+          description: 商品原価
+        profitRate:
+          $ref: '#/components/schemas/profitRate'
+        orderStatus:
+          $ref: '#/components/schemas/orderStatus'
+      required:
+        - productId
+        - orderQuantity
+        - shippingQuantity
+        - cancelQuantity
+        - remainingQuantity
+        - sellingPrice
+        - costPrice
+        - profitRate
+        - orderStatus
+    ReceivingDetailArray:
+      description: 受注明細
+      type: array
+      minItems: 1
+      items:
+        $ref: '#/components/schemas/ReceivingDetail'
+    ReceivingWithDetail:
+      description: 受注
+      type: object
+      properties:
+        orderNo:
+          $ref: '#/components/schemas/orderNo'
+        orderDate:
+          $ref: '#/components/schemas/sysDate'
+          description: 受注日
+        operatorName:
+          $ref: '#/components/schemas/operatorName'
+          description: 受注担当者氏名
+        customerName:
+          $ref: '#/components/schemas/customerName'
+        totalOrderPrice:
+          $ref: '#/components/schemas/price'
+          description: 受注金額
+        remainingOrderPrice:
+          $ref: '#/components/schemas/price'
+          description: 受注残額
+        orderStatus:
+          $ref: '#/components/schemas/orderStatus'
+        details:
+          $ref: '#/components/schemas/ReceivingDetailArray'
+      required:
+        - orderNo
+        - orderDate
+        - operatorName
+        - customerName
+        - totalOrderPrice
+        - remainingOrderPrice
+        - orderStatus
+        - details
+      example:
+        orderNo: RO-0000056
+        orderDate: '2024-05-26'
+        operatorName: 織田信長
+        customerName: 徳川物産株式会社
+        totalOrderPrice: 230200
+        remainingOrderPrice: 111200
+        orderStatus: WORK_IN_PROGRESS
+        details:
+          - productId: P0001
+            orderQuantity: 5
+            shippingQuantity: 1
+            cancelQuantity: 0
+            remainingQuantity: 4
+            sellingPrice: 27800
+            costPrice: 19800
+            profitRate: 0.29
+            orderStatus: WORK_IN_PROGRESS
+          - productId: P0005
+            orderQuantity: 3
+            shippingQuantity: 2
+            cancelQuantity: 1
+            remainingQuantity: 0
+            sellingPrice: 45600
+            costPrice: 28700
+            profitRate: 0.37
+            orderStatus: COMPLETED
+          - productId: P0006
+            orderQuantity: 1
+            shippingQuantity: 0
+            cancelQuantity: 1
+            remainingQuantity: 0
+            sellingPrice: 100200
+            costPrice: 73800
+            profitRate: 0.26
+            orderStatus: CANCELED
+    ReceivingOperatorBody:
+      description: 受注変更
+      type: object
+      properties:
+        operatorName:
+          $ref: '#/components/schemas/operatorName'
+          description: 受注担当者氏名
+      required:
+        - operatorName
+    CancelInstructionBody:
+      description: キャンセル指示登録
+      type: object
+      properties:
+        orderNo:
+          $ref: '#/components/schemas/orderNo'
+        productId:
+          $ref: '#/components/schemas/productId'
+        operatorName:
+          $ref: '#/components/schemas/operatorName'
+          description: キャンセル担当者氏名
+        quantity:
+          $ref: '#/components/schemas/quantity'
+          description: キャンセル数
+        reason:
+          $ref: '#/components/schemas/note'
+          description: キャンセル理由
+      required:
+        - orderNo
+        - productId
+        - operatorName
+        - quantity
+      example:
+        orderNo: RO-0000042
+        productId: P0023
+        operatorName: 武田信玄
+        quantity: 4
+        reason: 顧客都合
+    ShippingInstructionBody:
+      description: 出荷指示登録
+      type: object
+      properties:
+        orderNo:
+          $ref: '#/components/schemas/orderNo'
+        productId:
+          $ref: '#/components/schemas/productId'
+        operatorName:
+          $ref: '#/components/schemas/operatorName'
+          description: 出荷担当者氏名
+        quantity:
+          $ref: '#/components/schemas/quantity'
+          description: 出荷数
+      required:
+        - orderNo
+        - productId
+        - operatorName
+        - quantity
+  parameters:
+    accountId:
+      name: x-account-id
+      in: header
+      required: true
+      schema:
+        $ref: '#/components/schemas/accountId'
+    limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/limit'
+      description: 検索結果数上限値(デフォルト値は20)
+      example: 100
+    offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/offset'
+      description: 検索オフセット値(デフォルト値は0)
+      example: 20
+    customerName:
+      name: customer_name
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/customerName'
+      description: 【検索条件】得意先名称（完全一致）
+    orderStatus:
+      name: order_status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/orderStatus'
+      description: 【検索条件】受注ステータス
+    orderNo:
+      name: order_no
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/orderNo'
+  responses:
+    error_response:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  headers:
+    remaining:
+      schema:
+        type: boolean
+      description: 検索結果をlimit件数でスライスした際に残データがある場合にtrue
+      example: true
+    location:
+      schema:
+        type: string
+      description: 新規に作成したリソースのURL
+      example: /accounts/24
