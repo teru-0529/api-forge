@@ -1,0 +1,28 @@
+kongWorkSpace: aaaaaa
+
+settings:
+  - service: orders
+    path: ./api/orders/openapi.yaml
+    server:
+      prodHost: host.docker.internal
+      prodPort: 7010
+      mockHost: host.docker.internal
+      mockPort: 7011
+      mockBase: false
+    implementedApis:
+      - orders.receivings.get
+    readyApis:
+      - orders.receivings.get
+      - orders.receivings.no.get
+
+  - service: products
+    path: ./api/products/openapi.yaml
+    server:
+      prodHost: host.docker.internal
+      prodPort: 7020
+      mockHost: host.docker.internal
+      mockPort: 7021
+      mockBase: true
+    implementedApis:
+      - products.products.no.put
+    mockApis:
