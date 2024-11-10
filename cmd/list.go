@@ -19,14 +19,14 @@ var listCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// PROCESS: APIファイルの読み込み
-		apis, err := model.New(settingFile)
+		apiList, err := model.New(settingFile)
 		if err != nil {
 			return err
 		}
 
-		// PROCESS:
-		apis.ListMd(filepath.Join(distDir, "api-list.md"))
-		apis.ListTsv(filepath.Join(distDir, "api-list.tsv"))
+		// PROCESS: リスト出力
+		apiList.ListMd(filepath.Join(distDir, "api-list.md"))
+		apiList.ListTsv(filepath.Join(distDir, "api-list.tsv"))
 
 		fmt.Println("***command[list] completed.")
 		return nil

@@ -1,0 +1,85 @@
+workSpaceId: 42213eb3-e653-42a3-b207-bb81c7e75547
+initIsMock: true
+services:
+  - serviceName: receivoing-orders
+    openapiPath: ./api/orders/openapi.yaml
+    prodServer:
+      host: host.docker.internal
+      port: 7010
+      serviceId: 915c262f-6172-405c-9011-fe6eb14dc132
+    mockServer:
+      host: host.docker.internal
+      port: 7011
+      serviceId: 5d4d0999-5b2a-4b2c-a944-77c570a04d7f
+    apis:
+      - title: 受注一覧検索
+        operationId: orders.receivings.get
+        kongId: 11eea0be-fb99-4f39-8b81-61c7a1af6305
+        resourceId: API-receiv-000001
+        implemented: false
+      - title: 受注登録
+        operationId: orders.receivings.post
+        kongId: 218b131c-5ceb-49af-95c0-1d324a9568a0
+        resourceId: API-receiv-000002
+        implemented: true
+      - title: 受注取得
+        operationId: orders.receivings.no.get
+        kongId: b9780020-065e-45ad-a6e1-b890c5221d9d
+        resourceId: API-receiv-000003
+        implemented: false
+      - title: 受注修正
+        operationId: orders.receivings.no.operator.put
+        kongId: 4064ec65-b4b4-4498-97fb-9f1a874db6ba
+        resourceId: API-receiv-000004
+        implemented: false
+      - title: キャンセル指示登録
+        operationId: orders.cancel-instructions.post
+        kongId: 1a889bd6-1a48-4f3c-9954-86ad29a55590
+        resourceId: API-receiv-000005
+        implemented: false
+      - title: 出荷指示登録
+        operationId: orders.shipping-instructions.post
+        kongId: e4a59c8e-79d9-4ceb-997f-81c5774e66fa
+        resourceId: API-receiv-000006
+        implemented: false
+  - serviceName: prd
+    openapiPath: ./api/products/openapi.yaml
+    prodServer:
+      host: host.docker.internal
+      port: 7020
+      serviceId: 4e6e891e-b96b-43e9-a525-2a5d36c8b873
+    mockServer:
+      host: host.docker.internal
+      port: 7021
+      serviceId: 6aa4c660-ee5c-4684-b534-581e9d4bfc43
+    apis:
+      - title: 商品登録
+        operationId: products.products.no.put
+        kongId: 2b2873d8-25da-4937-8508-42e18eb6bbcc
+        resourceId: API-prd___-000001
+        implemented: false
+      - title: 商品修正
+        operationId: products.products.no.patch
+        kongId: ce5d7ae1-c0e0-4454-afb4-4d4a011e259f
+        resourceId: API-prd___-000002
+        implemented: false
+      - title: 商品削除
+        operationId: products.products.no.delete
+        kongId: 88abee8e-7a86-417a-bd47-4d32e6e93b5d
+        resourceId: API-prd___-000003
+        implemented: false
+      - title: 商品取得
+        operationId: products.products.no.get
+        kongId: 6e3d2e09-fdbb-48d7-9841-e81725d2d570
+        resourceId: API-prd___-000004
+        implemented: false
+      - title: サーバー状態を返す
+        operationId: products.health.get
+        kongId: 6c57bf7e-1f0e-417d-aa33-4d6313a3d889
+        resourceId: API-prd___-000005
+        implemented: true
+      - title: 商品一覧取得
+        operationId: products.products.get
+        kongId: bfa947cc-b424-4b07-8553-34446c8e1651
+        resourceId: API-prd___-000006
+        implemented: false

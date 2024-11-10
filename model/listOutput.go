@@ -5,7 +5,6 @@ package model
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 
@@ -16,7 +15,7 @@ const PROD = "🟢 production"
 const MOCK = "🟡 mock"
 
 // FUNCTION: MDファイルの書き込み
-func (apis *Apis) ListMd(path string) error {
+func (apiList *ApiList) ListMd(path string) error {
 	// PROCESS: Fileの取得
 	file, cleanup, err := store.NewFile(path)
 	if err != nil {
@@ -27,27 +26,41 @@ func (apis *Apis) ListMd(path string) error {
 	// PROCESS: 書き込み
 	file.WriteString("# API list\n")
 
-	for _, service := range apis.services {
-		file.WriteString(fmt.Sprintf("\n## %s(%s)\n\n", service.serviceName, service.description))
+	for _, service := range apiList.Services {
+		file.WriteString(fmt.Sprintf("\n## %s(%s)\n\n", service.ServiceName, service.openapi.description))
 
-		file.WriteString("  | Path | Method | OperationId | Summary | ParamNum | RequestBody | Responses | Status |\n")
+		file.WriteString("  | ResourceId | Path | Method | Name | ParamNum | RequestBody | Responses | Status |\n")
 		file.WriteString("  |---|---|---|---|--:|---|---|---|\n")
 
-		for _, api := range service.apis {
-			status := PROD
-			if service.isMock(api.operationId) {
-				status = MOCK
+		for _, api := range service.openapi.apis {
+			// ApiKeyの取得
+			apiKey, err := service.getApikey(api.operationId)
+			if err != nil {
+				return err
 			}
-			file.WriteString(fmt.Sprintf("  | %s | %s | %s | %s | %d | %s | %s | %s |\n",
-				api.path, api.method, api.operationId, api.summary, api.request.paramCount, api.request.bodyName(), api.resNames(), status))
+			// Production/Mock
+			status := MOCK
+			if apiKey.Implemented {
+				status = PROD
+			}
 
+			file.WriteString(fmt.Sprintf("  | %s | %s | %s | %s | %d | %s | %s | %s |\n",
+				apiKey.ResourceId,
+				api.path,
+				api.method,
+				fmt.Sprintf("%s(%s)", api.summary, api.operationId),
+				api.request.paramCount,
+				api.request.bodyName(),
+				api.resNames(),
+				status,
+			))
 		}
 	}
 	return nil
 }
 
 // FUNCTION: Tsvファイルの書き込み
-func (apis *Apis) ListTsv(path string) error {
+func (apiList *ApiList) ListTsv(path string) error {
 	// PROCESS: Writerの取得
 	writer, cleanup, err := store.NewCsvWriter(path)
 	if err != nil {
@@ -60,6 +73,7 @@ func (apis *Apis) ListTsv(path string) error {
 	writer.Write([]string{
 		"Service",
 		"Name",
+		"ResourceId",
 		"Path",
 		"Method",
 		"OperationId",
@@ -69,15 +83,23 @@ func (apis *Apis) ListTsv(path string) error {
 		"Responses",
 		"Status",
 	})
-	for _, service := range apis.services {
-		for _, api := range service.apis {
-			status := PROD
-			if service.isMock(api.operationId) {
-				status = MOCK
+	for _, service := range apiList.Services {
+		for _, api := range service.openapi.apis {
+			// ApiKeyの取得
+			apiKey, err := service.getApikey(api.operationId)
+			if err != nil {
+				return err
 			}
+			// Production/Mock
+			status := MOCK
+			if apiKey.Implemented {
+				status = PROD
+			}
+
 			writer.Write([]string{
-				service.serviceName,
-				service.description,
+				service.ServiceName,
+				service.openapi.description,
+				apiKey.ResourceId,
 				api.path,
 				api.method,
 				api.operationId,
@@ -87,23 +109,9 @@ func (apis *Apis) ListTsv(path string) error {
 				api.resNames(),
 				status,
 			})
-
 		}
 	}
 	return nil
-}
-
-// ----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+
-
-// FUNCTION: response名称(連結)
-func (oa *Openapi) isMock(operationId string) bool {
-	if slices.Contains(oa.ImplementedApis, operationId) {
-		return false
-	} else if slices.Contains(oa.ReadyApis, operationId) {
-		return true
-	} else {
-		return oa.server.MockBase
-	}
 }
 
 // FUNCTION: response名称(連結)
@@ -117,8 +125,8 @@ func (api *Api) resNames() string {
 
 // FUNCTION: requeestBody名称
 func (req *Request) bodyName() string {
-	if req.hasRequestBody {
-		return req.bodyDescription
+	if req.hasBody {
+		return req.name
 	} else {
 		return "N/A"
 	}
@@ -129,6 +137,6 @@ func (res *Response) bodyName() string {
 	if res.status == "default" {
 		return res.status
 	} else {
-		return fmt.Sprintf("%s(%s)", res.status, res.bodyDescription)
+		return fmt.Sprintf("%s(%s)", res.status, res.name)
 	}
 }

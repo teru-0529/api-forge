@@ -53,7 +53,7 @@ func init() {
 	// TODO:cofigファイルの定義(viper)は未整備
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.api-forge.yaml)")
 
-	rootCmd.PersistentFlags().StringVarP(&settingFile, "in", "I", "./api-list.yaml", "setting file path")
+	rootCmd.PersistentFlags().StringVarP(&settingFile, "in", "I", "./api-setup.yaml", "setting file path")
 	rootCmd.PersistentFlags().StringVarP(&distDir, "out", "O", "./dist", "output directry path")
 }
 
