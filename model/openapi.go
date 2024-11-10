@@ -14,15 +14,11 @@ import (
 
 // TITLE: Openapi構造体
 type Openapi struct {
-	serviceName     string
-	server          Server
-	ImplementedApis []string
-	ReadyApis       []string
-	formatVersion   string
-	title           string
-	description     string
-	version         string
-	apis            []Api
+	formatVersion string
+	title         string
+	description   string
+	version       string
+	apis          []Api
 }
 
 type Api struct {
@@ -33,27 +29,26 @@ type Api struct {
 	description string
 	request     Request
 	responses   []Response
-	// FIXME:
 }
 
 type Request struct {
-	paramCount      int
-	hasRequestBody  bool
-	bodyDescription string
+	paramCount int
+	hasBody    bool
+	name       string
 }
 
 type Response struct {
-	status          string
-	bodyDescription string
+	status string
+	name   string
 }
 
 // FUNCTION: Apiパース
-func parseOpenapi(param Setting) (*Openapi, error) {
-	log.Printf("parse '%s' openapi.", param.ServiceName)
-	openapi := Openapi{serviceName: param.ServiceName, server: param.Server, ImplementedApis: param.ImplementedApis, ReadyApis: param.ReadyApis}
+func NewOpenapi(service Service) (*Openapi, error) {
+	log.Printf("parse '%s' openapi file.", service.ServiceName)
+	openapi := Openapi{}
 
 	// PROCESS: openapi.yamlの読込み
-	row, err := readOpenapi(param.OpenapiPath)
+	row, err := readOpenapi(service.OpenapiPath)
 	if err != nil {
 		return nil, err
 	}
@@ -93,15 +88,15 @@ func parseOpenapi(param Setting) (*Openapi, error) {
 			// INFO: リクエストパラメータ(num)
 			paramCount := p.Q("parameters").Len()
 
-			hasRequestBody := false
-			requestBodyName := ""
+			hasBody := false
+			name := ""
 			// INFO: リクエストボディ(has,description)
-			requestBody, err := p.M("requestBody").M("description").String()
+			bodyDescription, err := p.M("requestBody").M("description").String()
 			if err == nil {
-				hasRequestBody = true
-				requestBodyName = requestBody
+				hasBody = true
+				name = bodyDescription
 			}
-			api.request = Request{paramCount: paramCount, hasRequestBody: hasRequestBody, bodyDescription: requestBodyName}
+			api.request = Request{paramCount: paramCount, hasBody: hasBody, name: name}
 
 			// PROCESS: response
 			// INFO: レスポンス(status,description)
@@ -110,7 +105,7 @@ func parseOpenapi(param Setting) (*Openapi, error) {
 			for status, resItem := range res {
 				description, _ := dproxy.New(resItem).M("description").String()
 
-				ress = append(ress, Response{status: status, bodyDescription: description})
+				ress = append(ress, Response{status: status, name: description})
 			}
 			api.responses = ress
 

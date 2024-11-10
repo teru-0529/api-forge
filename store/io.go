@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"gopkg.in/yaml.v3"
 )
 
 // FUNCTION: 書き込みファイルの準備（フォルダが無ければ作成する）
@@ -48,4 +50,19 @@ func NewCsvWriter(fileName string) (*csv.Writer, func(), error) {
 	writer.Comma = '\t' //タブ区切りに変更
 
 	return writer, cleanup, nil
+}
+
+// FUNCTION: yaml用のエンコーダー
+func NewYamlEncorder(fileName string) (*yaml.Encoder, func(), error) {
+	// PROCESS: ↑のファイル準備を呼び出す
+	file, cleanup, err := NewFile(fileName)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+
+	// PROCESS: encode
+	yamlEncoder := yaml.NewEncoder(file)
+	yamlEncoder.SetIndent(2) // this is what you're looking for
+	return yamlEncoder, cleanup, nil
 }
