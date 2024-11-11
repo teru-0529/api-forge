@@ -49,6 +49,8 @@ func init() {
 	// PROCESS:サブコマンドの追加
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(listCmd)
+	rootCmd.AddCommand(sqlCmd)
+	rootCmd.AddCommand(fixtureCmd)
 
 	// TODO:cofigファイルの定義(viper)は未整備
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.api-forge.yaml)")
