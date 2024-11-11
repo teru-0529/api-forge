@@ -5,17 +5,16 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/teru-0529/api-forge/model"
 )
 
-// sqlCmd represents the sql command
-var sqlCmd = &cobra.Command{
-	Use:   "sql",
-	Short: "Create Kong and ACL insert data.",
-	Long:  "Create Kong and ACL insert data.",
+// fixtureCmd represents the fixture command
+var fixtureCmd = &cobra.Command{
+	Use:   "fixture",
+	Short: "Create test fixture template.",
+	Long:  "Create test fixture template.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		// PROCESS: APIファイルの読み込み
@@ -24,11 +23,10 @@ var sqlCmd = &cobra.Command{
 			return err
 		}
 
-		// PROCESS: SQL出力
-		apiList.Sql4Kong(filepath.Join(distDir, "kongData.sql"))
-		apiList.Sql4Acl(filepath.Join(distDir, "aclData.sql"))
+		// PROCESS: Fixture出力
+		apiList.Fixture(distDir)
 
-		fmt.Println("***command[sql] completed.")
+		fmt.Println("***command[fixture] completed.")
 		return nil
 	},
 }
